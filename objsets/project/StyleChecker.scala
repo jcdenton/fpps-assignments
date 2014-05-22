@@ -21,7 +21,7 @@ object StyleChecker {
         if (fileCount == 0) println(" OK!")
       case StyleError(file, clazz, key, level, args, line, column, customMessage) =>
         report(line, column, messageHelper.text(level.name),
-            findMessage(messageHelper, clazz, key, args, customMessage))
+               Output.findMessage(messageHelper, clazz, key, args, customMessage))
       case StyleException(file, clazz, message, stacktrace, line, column) =>
         report(line, column, "error", message)
     }
@@ -48,18 +48,28 @@ object StyleChecker {
   }
 
   def assess(allSources: Seq[File]): (String, Int) = {
-    val configFile = new File("project/scalastyle_config.xml").getAbsolutePath
+    val reactive = allSources.exists{ f =>
+      val path = f.getAbsolutePath
+      path.contains("quickcheck") ||
+      path.contains("nodescala") ||
+      path.contains("suggestions") ||
+      path.contains("actorbintree") ||
+      path.contains("kvstore")
+    }
+    val tweak = if (reactive) "_reactive" else ""
+
+    val configFile = new File("project/scalastyle_config" + tweak + ".xml").getAbsolutePath
 
     val sources = allSources.filterNot{ f =>
       val path = f.getAbsolutePath
       path.contains("interpreter") ||
-      path.contains("simulations") ||
-      path.contains("fetchtweets")
+      path.contains("fetchtweets") ||
+      path.contains("simulations")
     }
 
     val messages = new ScalastyleChecker().checkFiles(
       ScalastyleConfiguration.readFromXml(configFile),
-      Directory.getFiles(sources : _*))
+      Directory.getFiles(None, sources))
 
     val output = new ByteArrayOutputStream()
     val outputResult = Console.withOut(new PrintStream(output)) {
@@ -71,7 +81,7 @@ object StyleChecker {
       "Processed " + outputResult.files + " file(s)\n" +
       "Found " + outputResult.errors + " errors\n" +
       "Found " + outputResult.warnings + " warnings\n" +
-      (if (outputResult.errors+outputResult.warnings > 0) "Consult the style guide at %s/wiki/view?page=GradingPolicy".format(baseURL("progfun-003")) else "")
+      (if (outputResult.errors+outputResult.warnings > 0) "Consult the style guide at %s/wiki/ScalaStyleGuide".format(baseURL("progfun-004")) else "")
 
     (msg, score(outputResult))
   }
