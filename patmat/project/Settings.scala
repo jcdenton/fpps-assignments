@@ -2,10 +2,12 @@ object Settings {
   // when changing this, also look at 'scripts/gradingImpl' and the files in s3/settings
   // val courseId = "progfun-2012-001"
   def baseURL(courseId: String) = 
-    if (courseId == "progfun-003")
-      "https://class.coursera.org/" + courseId
-    else
-      "https://epfl.coursera.org/" + courseId
+    courseId match {
+      case "progfun-004" | "reactive-001" =>
+        "https://class.coursera.org/" + courseId
+      case "progfun-epfl-001" =>
+        "https://epfl.coursera.org/" + courseId
+    }
 
   def challengeUrl(courseId: String) = baseURL(courseId) + "/assignment/challenge"
 
